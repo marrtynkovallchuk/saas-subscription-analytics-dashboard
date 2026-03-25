@@ -1,0 +1,23 @@
+WITH monthly_revenue AS (
+  SELECT
+    FORMAT_DATE('%Y-%m', start_date) AS month,
+    SUM(mrr_amount) AS mrr_in_month,
+    SUM(CASE WHEN end_date IS NOT NULL AND is_trial = FALSE THEN mrr_amount ELSE 0 END) AS churned_mrr,
+    SUM(CASE WHEN upgrade_flag = TRUE THEN mrr_amount ELSE 0 END) AS upgraded_mrr
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY month
+),
+
+nrr_calc AS (
+  SELECT
+    month,
+    mrr_in_month,
+    churned_mrr,
+    upgraded_mrr,
+    ROUND(SAFE_DIVIDE(mrr_in_month + upgraded_mrr - churned_mrr, mrr_in_month) * 100, 2) AS nrr_percent
+  FROM monthly_revenue
+)
+
+SELECT *
+FROM nrr_calc
+ORDER BY month;
