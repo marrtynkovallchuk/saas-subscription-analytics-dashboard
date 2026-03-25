@@ -1,0 +1,42 @@
+WITH cohorts AS (
+  SELECT
+    account_id,
+    FORMAT_DATE('%Y-%m', signup_date) AS cohort_month
+  FROM `Saas.ravenstack_accounts`
+),
+
+subscription_months AS (
+  SELECT
+    account_id,
+    start_date,
+    end_date,
+    mrr_amount,
+    arr_amount
+  FROM `Saas.ravenstack_subscriptions`
+),
+
+active_months AS (
+  SELECT
+    s.account_id,
+    c.cohort_month,
+    m AS revenue_date,
+    s.mrr_amount,
+    s.arr_amount
+  FROM subscription_months s
+  JOIN cohorts c
+    ON s.account_id = c.account_id
+  JOIN UNNEST(GENERATE_DATE_ARRAY(
+      s.start_date,
+      IFNULL(s.end_date, DATE('2024-02-28')), 
+      INTERVAL 1 MONTH
+    )) AS m
+)
+
+SELECT
+  cohort_month,
+  FORMAT_DATE('%Y-%m', revenue_date) AS revenue_month,
+  SUM(mrr_amount) AS total_mrr,
+  SUM(arr_amount) AS total_arr
+FROM active_months
+GROUP BY cohort_month, revenue_month
+ORDER BY cohort_month, revenue_month
