@@ -1,0 +1,31 @@
+WITH account_info AS (
+  SELECT account_id, industry, referral_source
+  FROM `Saas.ravenstack_accounts`
+),
+
+churned_accounts AS (
+  SELECT DISTINCT account_id
+  FROM `Saas.ravenstack_churn_events`
+),
+
+segment_churn AS (
+  SELECT
+    a.industry,
+    a.referral_source,
+    COUNT(DISTINCT a.account_id) AS total_accounts,
+    COUNT(DISTINCT c.account_id) AS churned_accounts,
+    SAFE_DIVIDE(COUNT(DISTINCT c.account_id), COUNT(DISTINCT a.account_id)) AS churn_rate
+  FROM account_info a
+  LEFT JOIN churned_accounts c
+    ON a.account_id = c.account_id
+  GROUP BY a.industry, a.referral_source
+)
+
+SELECT
+  industry,
+  referral_source,
+  total_accounts,
+  churned_accounts,
+  ROUND(churn_rate * 100, 2) AS churn_rate_percent
+FROM segment_churn
+ORDER BY churn_rate_percent DESC;
