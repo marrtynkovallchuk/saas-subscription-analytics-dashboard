@@ -1,0 +1,25 @@
+WITH churn AS (
+  SELECT
+    DATE_TRUNC(churn_date, MONTH) AS month,
+    COUNT(DISTINCT account_id) AS churned_accounts
+  FROM `Saas.ravenstack_churn_events`
+  GROUP BY month
+),
+
+active AS (
+  SELECT
+    DATE_TRUNC(start_date, MONTH) AS month,
+    COUNT(DISTINCT account_id) AS active_accounts
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY month
+)
+
+SELECT
+  a.month,
+  a.active_accounts,
+  COALESCE(c.churned_accounts, 0) AS churned_accounts,
+  SAFE_DIVIDE(COALESCE(c.churned_accounts, 0), a.active_accounts) AS churn_rate
+FROM active a
+LEFT JOIN churn c
+ON a.month = c.month
+ORDER BY a.month
