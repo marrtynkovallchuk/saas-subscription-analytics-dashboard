@@ -1,0 +1,32 @@
+WITH first_sub AS (
+  SELECT
+    account_id,
+    start_date,
+    end_date,
+    ROW_NUMBER() OVER (
+      PARTITION BY account_id
+      ORDER BY start_date
+    ) AS rn
+  FROM `Saas.ravenstack_subscriptions`
+),
+
+first_only AS (
+  SELECT
+    account_id,
+    DATE_DIFF(end_date, start_date, MONTH) AS lifetime_months
+  FROM first_sub
+  WHERE rn = 1
+),
+
+stats AS (
+  SELECT
+    COUNT(*) AS total_accounts,
+    COUNTIF(lifetime_months <= 1 AND lifetime_months IS NOT NULL) AS canceled_fast
+  FROM first_only
+)
+
+SELECT
+  total_accounts,
+  canceled_fast,
+  SAFE_DIVIDE(canceled_fast, total_accounts) AS cancel_rate_first_month
+FROM stats
