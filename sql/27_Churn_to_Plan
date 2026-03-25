@@ -1,0 +1,35 @@
+WITH last_plan AS (
+  SELECT
+    c.account_id,
+    ARRAY_AGG(s.plan_tier ORDER BY s.start_date DESC LIMIT 1)[OFFSET(0)] AS plan_at_churn
+  FROM `Saas.ravenstack_churn_events` c
+  JOIN `Saas.ravenstack_subscriptions` s
+    ON c.account_id = s.account_id
+  GROUP BY c.account_id
+),
+
+churned_by_plan AS (
+  SELECT
+    plan_at_churn AS plan_tier,
+    COUNT(*) AS churned_accounts
+  FROM last_plan
+  GROUP BY plan_at_churn
+),
+
+total_by_plan AS (
+  SELECT
+    plan_tier,
+    COUNT(DISTINCT account_id) AS total_accounts
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY plan_tier
+)
+
+SELECT
+  t.plan_tier,
+  total_accounts,
+  COALESCE(c.churned_accounts, 0) AS churned_accounts,
+  ROUND(SAFE_DIVIDE(COALESCE(c.churned_accounts, 0), total_accounts) * 100, 2) AS churn_rate_percent
+FROM total_by_plan t
+LEFT JOIN churned_by_plan c
+  ON t.plan_tier = c.plan_tier
+ORDER BY churn_rate_percent DESC;
