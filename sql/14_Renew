@@ -1,0 +1,27 @@
+WITH subs AS (
+  SELECT
+    account_id,
+    start_date,
+    end_date,
+    ROW_NUMBER() OVER (
+      PARTITION BY account_id
+      ORDER BY start_date
+    ) AS rn
+  FROM `Saas.ravenstack_subscriptions`
+),
+
+pairs AS (
+  SELECT
+    a.account_id,
+    a.end_date AS prev_end,
+    b.start_date AS next_start
+  FROM subs a
+  JOIN subs b
+    ON a.account_id = b.account_id
+   AND a.rn + 1 = b.rn
+)
+
+SELECT
+  COUNT(DISTINCT account_id) AS renewed_accounts
+FROM pairs
+WHERE next_start >= prev_end
