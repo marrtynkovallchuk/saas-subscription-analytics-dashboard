@@ -1,0 +1,8 @@
+SELECT
+  s.plan_tier,
+  COUNT(DISTINCT s.account_id) AS total_accounts,
+  SUM(s.mrr_amount) AS total_mrr,
+  SUM(s.mrr_amount) * 12 AS total_arr
+FROM `Saas.ravenstack_subscriptions` s
+GROUP BY s.plan_tier
+ORDER BY total_mrr DESC;
