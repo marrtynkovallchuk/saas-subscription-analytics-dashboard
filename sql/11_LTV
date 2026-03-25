@@ -1,0 +1,30 @@
+WITH subscription_lifetime AS (
+  SELECT
+    account_id,
+    plan_tier,
+    billing_frequency,
+    mrr_amount,
+    arr_amount,
+    IFNULL(DATE_DIFF(end_date, start_date, MONTH), DATE_DIFF(CURRENT_DATE(), start_date, MONTH)) AS lifetime_months
+  FROM `Saas.ravenstack_subscriptions`
+)
+
+SELECT
+  plan_tier,
+  billing_frequency,
+  COUNT(DISTINCT account_id) AS total_accounts,
+  -- ARPU
+  CASE 
+    WHEN billing_frequency = 'monthly' THEN AVG(mrr_amount)
+    ELSE NULL
+  END AS avg_mrr_per_account,
+  CASE 
+    WHEN billing_frequency = 'annual' THEN AVG(arr_amount)
+    ELSE NULL
+  END AS avg_arr_per_account,
+  -- Lifetime
+  AVG(lifetime_months) AS avg_lifetime_months,
+  -- LTV окремо для MRR і ARR
+FROM subscription_lifetime
+GROUP BY plan_tier, billing_frequency
+ORDER BY plan_tier, billing_frequency
