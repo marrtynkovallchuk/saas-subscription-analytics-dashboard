@@ -1,0 +1,38 @@
+WITH cohorts AS (
+  SELECT
+    account_id,
+    FORMAT_DATE('%Y-%m', signup_date) AS cohort_month
+  FROM `Saas.ravenstack_accounts`
+),
+
+churn_activity AS (
+  SELECT
+    c.account_id,
+    FORMAT_DATE('%Y-%m', e.churn_date) AS churn_month
+  FROM cohorts c
+  JOIN `Saas.ravenstack_churn_events` e
+    ON c.account_id = e.account_id
+  WHERE e.churn_date <= DATE('2024-02-28') 
+),
+
+cohort_size AS (
+  SELECT
+    cohort_month,
+    COUNT(DISTINCT account_id) AS total_accounts
+  FROM cohorts
+  GROUP BY cohort_month
+)
+
+SELECT
+  c.cohort_month,
+  ca.churn_month,
+  COUNT(DISTINCT ca.account_id) AS churned_accounts,
+  SAFE_DIVIDE(COUNT(DISTINCT ca.account_id), cs.total_accounts) AS churn_rate
+FROM cohort_size cs
+JOIN cohorts c
+  ON cs.cohort_month = c.cohort_month
+JOIN churn_activity ca
+  ON c.account_id = ca.account_id
+WHERE ca.churn_month IS NOT NULL
+GROUP BY c.cohort_month, ca.churn_month, cs.total_accounts
+ORDER BY c.cohort_month, ca.churn_month
