@@ -1,0 +1,7 @@
+SELECT
+  FORMAT_DATE("%Y-%m", start_date) AS month,
+  SUM(mrr_amount) AS total_mrr
+FROM `Saas.ravenstack_subscriptions`
+WHERE mrr_amount IS NOT NULL
+GROUP BY month
+ORDER BY month
