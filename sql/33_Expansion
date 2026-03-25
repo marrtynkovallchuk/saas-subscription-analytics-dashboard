@@ -1,0 +1,22 @@
+WITH monthly_revenue AS (
+  SELECT
+    FORMAT_DATE('%Y-%m', start_date) AS month,
+    SUM(mrr_amount) AS mrr_in_month,
+    SUM(CASE WHEN end_date IS NOT NULL AND is_trial = FALSE THEN mrr_amount ELSE 0 END) AS churned_mrr,
+    SUM(CASE WHEN upgrade_flag = TRUE THEN mrr_amount ELSE 0 END) AS upgraded_mrr
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY month
+)
+
+SELECT
+  month,
+  mrr_in_month,
+  churned_mrr,
+  upgraded_mrr,
+  upgraded_mrr - churned_mrr AS net_expansion,
+  CASE
+    WHEN upgraded_mrr - churned_mrr > 0 THEN 'Expansion перекриває churn'
+    ELSE 'Expansion не перекриває churn'
+  END AS comment
+FROM monthly_revenue
+ORDER BY month;
