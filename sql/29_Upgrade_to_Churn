@@ -1,0 +1,32 @@
+WITH account_upgrade_flag AS (
+  SELECT
+    account_id,
+    CASE 
+      WHEN MAX(CAST(upgrade_flag AS INT64)) = 1 THEN 'upgrade'
+      ELSE 'no_upgrade'
+    END AS group_type,
+    MAX(end_date) AS last_end_date,
+    MAX(is_trial) AS is_trial_flag
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY account_id
+),
+
+account_churn AS (
+  SELECT
+    account_id,
+    group_type,
+    CASE 
+      WHEN last_end_date IS NOT NULL AND is_trial_flag = FALSE THEN 1
+      ELSE 0
+    END AS churn_flag
+  FROM account_upgrade_flag
+)
+
+SELECT
+  group_type,
+  COUNT(account_id) AS total_accounts,
+  SUM(churn_flag) AS churned_accounts,
+  ROUND(SAFE_DIVIDE(SUM(churn_flag), COUNT(account_id)) * 100, 2) AS churn_rate_percent
+FROM account_churn
+GROUP BY group_type
+ORDER BY group_type DESC;
