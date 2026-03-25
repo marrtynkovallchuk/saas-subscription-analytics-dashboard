@@ -1,0 +1,37 @@
+WITH cohorts AS (
+  SELECT
+    account_id,
+    FORMAT_DATE('%Y-%m', signup_date) AS cohort_month
+  FROM `Saas.ravenstack_accounts`
+),
+
+subscription_lifetime AS (
+  SELECT
+    account_id,
+    start_date,
+    IFNULL(end_date, DATE('2024-02-29')) AS end_date,
+    GREATEST(0, DATE_DIFF(IFNULL(end_date, DATE('2024-02-29')), start_date, DAY)) AS lifetime_days
+  FROM `Saas.ravenstack_subscriptions`
+  WHERE start_date <= IFNULL(end_date, DATE('2024-02-29'))
+),
+
+cohort_lifetime AS (
+  SELECT
+    c.cohort_month,
+    l.account_id,
+    SUM(l.lifetime_days) AS total_lifetime_days
+  FROM subscription_lifetime l
+  JOIN cohorts c
+    ON l.account_id = c.account_id
+  GROUP BY c.cohort_month, l.account_id
+)
+
+SELECT
+  cohort_month,
+  COUNT(account_id) AS total_accounts,
+  AVG(total_lifetime_days) AS avg_lifetime_days,
+  MIN(total_lifetime_days) AS min_lifetime_days,
+  MAX(total_lifetime_days) AS max_lifetime_days
+FROM cohort_lifetime
+GROUP BY cohort_month
+ORDER BY cohort_month;
