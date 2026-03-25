@@ -1,0 +1,20 @@
+WITH monthly_stats AS (
+  SELECT
+    FORMAT_DATE('%Y-%m', start_date) AS month,
+    COUNT(DISTINCT account_id) AS new_accounts,
+    SUM(mrr_amount) AS mrr_in_month,
+    SUM(CASE WHEN end_date IS NOT NULL AND is_trial = FALSE THEN 1 ELSE 0 END) AS churned_accounts
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY month
+)
+
+SELECT
+  month,
+  new_accounts,
+  SUM(new_accounts) OVER (ORDER BY month) AS cumulative_accounts,
+  churned_accounts,
+  SUM(churned_accounts) OVER (ORDER BY month) AS cumulative_churned_accounts,
+  mrr_in_month,
+  SUM(mrr_in_month) OVER (ORDER BY month) AS cumulative_mrr
+FROM monthly_stats
+ORDER BY month;
