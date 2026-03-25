@@ -96,9 +96,16 @@ Data was prepared in BigQuery and imported into Power BI.
 
 ## Dashboard Preview
 
-![Churn](screenshots/churn.png)
-![Revenue](screenshots/revenue.png)
-![Cohort](screenshots/cohort.png)
+![Overview](images/Overview.png)
+![Churn Analysis](images/Churn_Analysis.png)
+![Revenue & MRR](images/Revenue_Analysis.png)
+![Subscription Lifecycle](images/Subscription_Lifecycle.png)
+![Cohort Analysis](images/Cohort_Analysis.png)
+![Customer Segmentation](images/Customer_Segmentation.png)
+![Growth & SaaS Health](images/Growth.png)
+![Key Insights](images/Key_Insights.png)
+![Recommendations](images/Recommendations.png)
+
 
 ---
 
