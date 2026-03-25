@@ -1,0 +1,20 @@
+WITH last_subscription AS (
+  SELECT
+    account_id,
+    billing_frequency,
+    MAX(end_date) AS last_end_date
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY account_id, billing_frequency
+)
+
+SELECT
+  billing_frequency,
+  COUNT(DISTINCT account_id) AS total_accounts,
+  COUNT(DISTINCT CASE WHEN last_end_date IS NOT NULL THEN account_id END) AS churned_accounts,
+  SAFE_DIVIDE(
+    COUNT(DISTINCT CASE WHEN last_end_date IS NOT NULL THEN account_id END),
+    COUNT(DISTINCT account_id)
+  ) AS churn_rate
+FROM last_subscription
+GROUP BY billing_frequency
+ORDER BY churn_rate DESC
