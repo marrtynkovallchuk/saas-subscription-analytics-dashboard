@@ -1,0 +1,18 @@
+WITH account_churn AS (
+  SELECT
+    a.account_id,
+    a.country,
+    IF(c.account_id IS NOT NULL, 1, 0) AS churn_flag
+  FROM `Saas.ravenstack_accounts` a
+  LEFT JOIN `Saas.ravenstack_churn_events` c
+    ON a.account_id = c.account_id
+)
+
+SELECT
+  country,
+  COUNT(DISTINCT account_id) AS total_accounts,
+  SUM(churn_flag) AS churned_accounts,
+  ROUND(SAFE_DIVIDE(SUM(churn_flag), COUNT(DISTINCT account_id)) * 100, 2) AS churn_rate_percent
+FROM account_churn
+GROUP BY country
+ORDER BY churn_rate_percent DESC;
