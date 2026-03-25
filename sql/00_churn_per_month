@@ -1,0 +1,6 @@
+SELECT
+  DATE_TRUNC(churn_date, MONTH) AS churn_month,
+  COUNT(DISTINCT account_id) AS churned_accounts
+FROM `Saas.ravenstack_churn_events`
+GROUP BY churn_month
+ORDER BY churn_month
