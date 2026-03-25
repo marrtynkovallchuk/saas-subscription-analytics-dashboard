@@ -1,0 +1,23 @@
+WITH first_subscription AS (
+  SELECT
+    account_id,
+    country,
+    industry,
+    ARRAY_AGG(signup_date ORDER BY signup_date ASC LIMIT 1)[OFFSET(0)] AS first_signup_date,
+    ARRAY_AGG(churn_flag ORDER BY signup_date ASC LIMIT 1)[OFFSET(0)] AS first_churn_flag
+  FROM `Saas.ravenstack_accounts`
+  GROUP BY account_id, country, industry
+)
+
+SELECT
+  country,
+  industry,
+  COUNT(DISTINCT account_id) AS total_accounts,
+  COUNT(DISTINCT CASE WHEN first_churn_flag = TRUE THEN account_id END) AS churned_accounts,
+  SAFE_DIVIDE(
+    COUNT(DISTINCT CASE WHEN first_churn_flag = TRUE THEN account_id END),
+    COUNT(DISTINCT account_id)
+  ) AS churn_rate
+FROM first_subscription
+GROUP BY country, industry
+ORDER BY churn_rate DESC
