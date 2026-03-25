@@ -1,0 +1,30 @@
+WITH account_price AS (
+  SELECT
+    s.account_id,
+    s.mrr_amount,
+    c.account_id AS churned
+  FROM `Saas.ravenstack_subscriptions` s
+  LEFT JOIN `Saas.ravenstack_churn_events` c
+    ON s.account_id = c.account_id
+),
+
+price_buckets AS (
+  SELECT
+    account_id,
+    churned IS NOT NULL AS churn_flag,
+    CASE
+      WHEN mrr_amount < 100 THEN 'Low'
+      WHEN mrr_amount >= 100 AND mrr_amount < 500 THEN 'Medium'
+      ELSE 'High'
+    END AS price_segment
+  FROM account_price
+)
+
+SELECT
+  price_segment,
+  COUNT(DISTINCT account_id) AS total_accounts,
+  COUNT(DISTINCT IF(churn_flag, account_id, NULL)) AS churned_accounts,
+  ROUND(SAFE_DIVIDE(COUNT(DISTINCT IF(churn_flag, account_id, NULL)), COUNT(DISTINCT account_id)) * 100, 2) AS churn_rate_percent
+FROM price_buckets
+GROUP BY price_segment
+ORDER BY churn_rate_percent DESC;
