@@ -1,0 +1,46 @@
+WITH cohorts AS (
+  SELECT
+    account_id,
+    FORMAT_DATE('%Y-%m', signup_date) AS cohort_month
+  FROM `Saas.ravenstack_accounts`
+),
+
+activity AS (
+  SELECT
+    s.account_id,
+    s.start_date,
+    s.end_date,
+    GENERATE_DATE_ARRAY(s.start_date, IFNULL(s.end_date, s.start_date), INTERVAL 1 MONTH) AS active_months
+  FROM `Saas.ravenstack_subscriptions` s
+),
+
+exploded AS (
+  SELECT
+    c.account_id,
+    c.cohort_month,
+    FORMAT_DATE('%Y-%m', month) AS month
+  FROM cohorts c
+  JOIN activity a
+    ON c.account_id = a.account_id,
+    UNNEST(active_months) AS month
+  WHERE month <= DATE('2024-02-28')
+),
+
+cohort_size AS (
+  SELECT
+    cohort_month,
+    COUNT(DISTINCT account_id) AS total_accounts
+  FROM cohorts
+  GROUP BY cohort_month
+)
+
+SELECT
+  e.cohort_month,
+  e.month,
+  COUNT(DISTINCT e.account_id) AS active_accounts,
+  SAFE_DIVIDE(COUNT(DISTINCT e.account_id), c.total_accounts) AS retention_rate
+FROM exploded e
+JOIN cohort_size c
+  ON e.cohort_month = c.cohort_month
+GROUP BY e.cohort_month, e.month, c.total_accounts
+ORDER BY e.cohort_month, e.month
