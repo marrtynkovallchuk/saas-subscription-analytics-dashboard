@@ -1,0 +1,14 @@
+WITH churned_accounts AS (
+  SELECT
+    account_id,
+    mrr_amount,
+    arr_amount
+  FROM `Saas.ravenstack_subscriptions`
+  WHERE end_date IS NOT NULL  -- або churn_flag = TRUE
+)
+
+SELECT
+  COUNT(DISTINCT account_id) AS churned_accounts,
+  SUM(mrr_amount) AS lost_mrr,
+  SUM(arr_amount) AS lost_arr
+FROM churned_accounts
