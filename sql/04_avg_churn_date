@@ -1,0 +1,24 @@
+WITH valid_subscription AS (
+  SELECT
+    c.churn_event_id,
+    ARRAY_AGG(s.start_date ORDER BY s.start_date DESC LIMIT 1)[OFFSET(0)] AS start_date,
+    c.churn_date
+  FROM `Saas.ravenstack_churn_events` c
+  JOIN `Saas.ravenstack_subscriptions` s
+    ON c.account_id = s.account_id
+  WHERE s.start_date <= c.churn_date
+  GROUP BY c.churn_event_id, c.churn_date
+),
+
+lifetime_days AS (
+  SELECT
+    DATE_DIFF(churn_date, start_date, DAY) AS days_to_churn
+  FROM valid_subscription
+  WHERE churn_date IS NOT NULL
+)
+
+SELECT
+  AVG(days_to_churn) AS avg_days_to_churn,
+  MIN(days_to_churn) AS min_days_to_churn,
+  MAX(days_to_churn) AS max_days_to_churn
+FROM lifetime_days
