@@ -1,0 +1,7 @@
+SELECT
+  COUNT(DISTINCT account_id) AS total_accounts,
+  SUM(mrr_amount) AS total_mrr,
+  SUM(arr_amount) AS total_arr,
+  SAFE_DIVIDE(SUM(mrr_amount), COUNT(DISTINCT account_id)) AS arpu_mrr,
+  SAFE_DIVIDE(SUM(arr_amount), COUNT(DISTINCT account_id)) AS arpu_arr
+FROM `Saas.ravenstack_subscriptions`
