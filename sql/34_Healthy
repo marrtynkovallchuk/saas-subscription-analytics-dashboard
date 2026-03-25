@@ -1,0 +1,24 @@
+WITH monthly_summary AS (
+  SELECT
+    FORMAT_DATE('%Y-%m', start_date) AS month,
+    COUNT(DISTINCT account_id) AS total_accounts,
+    SUM(mrr_amount) AS mrr_in_month,
+    SUM(CASE WHEN end_date IS NOT NULL AND is_trial = FALSE THEN mrr_amount ELSE 0 END) AS churned_mrr,
+    SUM(CASE WHEN upgrade_flag = TRUE THEN mrr_amount ELSE 0 END) AS upgraded_mrr,
+    SUM(CASE WHEN start_date >= DATE_TRUNC(start_date, MONTH) THEN 1 ELSE 0 END) AS new_accounts
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY month
+)
+
+SELECT
+  month,
+  total_accounts,
+  new_accounts,
+  mrr_in_month,
+  churned_mrr,
+  upgraded_mrr,
+  upgraded_mrr - churned_mrr AS net_expansion,
+  SAFE_DIVIDE(upgraded_mrr - churned_mrr, mrr_in_month) * 100 AS net_expansion_percent,
+  SAFE_DIVIDE(mrr_in_month - churned_mrr, mrr_in_month) * 100 AS retention_percent
+FROM monthly_summary
+ORDER BY month;
