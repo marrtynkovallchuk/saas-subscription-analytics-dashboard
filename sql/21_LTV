@@ -1,0 +1,32 @@
+WITH account_info AS (
+  SELECT
+    account_id,
+    industry,
+    referral_source
+  FROM `Saas.ravenstack_accounts`
+),
+
+account_ltv AS (
+  SELECT
+    a.account_id,
+    a.industry,
+    a.referral_source,
+    SUM(s.mrr_amount * GREATEST(1, DATE_DIFF(IFNULL(s.end_date, DATE('2024-02-29')), s.start_date, MONTH))) AS ltv_mrr,
+    SUM(s.mrr_amount * 12 * GREATEST(1, DATE_DIFF(IFNULL(s.end_date, DATE('2024-02-29')), s.start_date, YEAR))) AS ltv_arr
+  FROM account_info a
+  JOIN `Saas.ravenstack_subscriptions` s
+    ON a.account_id = s.account_id
+  GROUP BY a.account_id, a.industry, a.referral_source
+)
+
+SELECT
+  industry,
+  referral_source,
+  COUNT(account_id) AS total_accounts,
+  SUM(ltv_mrr) AS total_ltv_mrr,
+  ROUND(AVG(ltv_mrr),2) AS avg_ltv_mrr,
+  SUM(ltv_arr) AS total_ltv_arr,
+  ROUND(AVG(ltv_arr),2) AS avg_ltv_arr
+FROM account_ltv
+GROUP BY industry, referral_source
+ORDER BY total_ltv_mrr DESC;
