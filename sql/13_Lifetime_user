@@ -1,0 +1,15 @@
+WITH user_lifetime AS (
+  SELECT
+    account_id,
+    MIN(start_date) AS first_start,
+    MAX(IFNULL(end_date, CURRENT_DATE())) AS last_end
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY account_id
+)
+
+SELECT
+  COUNT(*) AS total_accounts,
+  AVG(DATE_DIFF(last_end, first_start, MONTH)) AS avg_lifetime_months,
+  MIN(DATE_DIFF(last_end, first_start, MONTH)) AS min_lifetime_months,
+  MAX(DATE_DIFF(last_end, first_start, MONTH)) AS max_lifetime_months
+FROM user_lifetime
