@@ -1,0 +1,14 @@
+WITH monthly_new_accounts AS (
+  SELECT
+    FORMAT_DATE('%Y-%m', start_date) AS month,
+    COUNT(DISTINCT account_id) AS new_accounts_in_month
+  FROM `Saas.ravenstack_subscriptions`
+  GROUP BY month
+)
+
+SELECT
+  month,
+  new_accounts_in_month,
+  SUM(new_accounts_in_month) OVER (ORDER BY month) AS cumulative_accounts
+FROM monthly_new_accounts
+ORDER BY month;
