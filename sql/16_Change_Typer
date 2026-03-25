@@ -1,0 +1,43 @@
+WITH subs AS (
+  SELECT
+    account_id,
+    plan_tier,
+    start_date,
+    ROW_NUMBER() OVER (
+      PARTITION BY account_id
+      ORDER BY start_date
+    ) AS rn
+  FROM `Saas.ravenstack_subscriptions`
+),
+
+first_two AS (
+  SELECT
+    a.account_id,
+    a.plan_tier AS first_plan,
+    b.plan_tier AS second_plan
+  FROM subs a
+  JOIN subs b
+    ON a.account_id = b.account_id
+   AND a.rn = 1
+   AND b.rn = 2
+),
+
+classified AS (
+  SELECT
+    account_id,
+    CASE
+      WHEN first_plan = second_plan THEN 'same'
+      WHEN first_plan = 'Basic' AND second_plan IN ('Pro','Enterprise') THEN 'upgrade'
+      WHEN first_plan = 'Pro' AND second_plan = 'Enterprise' THEN 'upgrade'
+      WHEN first_plan = 'Enterprise' AND second_plan IN ('Pro','Basic') THEN 'downgrade'
+      WHEN first_plan = 'Pro' AND second_plan = 'Basic' THEN 'downgrade'
+      ELSE 'same'
+    END AS change_type
+  FROM first_two
+)
+
+SELECT
+  change_type,
+  COUNT(*) AS accounts
+FROM classified
+GROUP BY change_type
