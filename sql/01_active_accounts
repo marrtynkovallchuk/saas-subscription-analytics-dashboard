@@ -1,0 +1,14 @@
+WITH months AS (
+  SELECT DISTINCT DATE_TRUNC(start_date, MONTH) AS month
+  FROM `Saas.ravenstack_subscriptions`
+)
+
+SELECT
+  m.month,
+  COUNT(DISTINCT s.account_id) AS active_accounts
+FROM months m
+JOIN `Saas.ravenstack_subscriptions` s
+ON s.start_date <= m.month
+AND (s.end_date IS NULL OR s.end_date >= m.month)
+GROUP BY m.month
+ORDER BY m.month
