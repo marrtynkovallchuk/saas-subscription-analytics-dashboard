@@ -1,0 +1,6 @@
+SELECT
+  COUNT(*) AS total_subscriptions,
+  AVG(IFNULL(DATE_DIFF(end_date, start_date, MONTH), DATE_DIFF(CURRENT_DATE(), start_date, MONTH))) AS avg_lifetime_months,
+  MIN(IFNULL(DATE_DIFF(end_date, start_date, MONTH), DATE_DIFF(CURRENT_DATE(), start_date, MONTH))) AS min_lifetime_months,
+  MAX(IFNULL(DATE_DIFF(end_date, start_date, MONTH), DATE_DIFF(CURRENT_DATE(), start_date, MONTH))) AS max_lifetime_months
+FROM `Saas.ravenstack_subscriptions`
