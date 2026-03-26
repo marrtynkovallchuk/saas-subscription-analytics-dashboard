@@ -53,8 +53,6 @@ Tables used:
 - accounts
 - subscriptions
 - churn_events
-- feature_usage
-- support_tickets
 
 Data was prepared in BigQuery and imported into Power BI.
 
